@@ -8,6 +8,8 @@ import { ConfigModule } from '@nestjs/config';
 import { join } from 'path';
 import { ItemsModule } from './items/items.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { UsersModule } from './users/users.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -16,6 +18,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       driver: ApolloDriver,
 
       playground: false,
+      includeStacktraceInErrorResponses: false,
 
       // Process.cwd es la carpeta donde se está ejecutando el proyecto
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
@@ -34,6 +37,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       autoLoadEntities: true,
     }),
     ItemsModule,
+    UsersModule,
+    AuthModule,
   ],
   controllers: [],
   providers: [],

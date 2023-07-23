@@ -1,5 +1,5 @@
 import { ParseUUIDPipe } from '@nestjs/common';
-import { Resolver, Query, Mutation, Args, Int, ID } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
 import { ItemsService } from './items.service';
 import { Item } from './entities/item.entity';
 import { CreateItemInput, UpdateItemInput } from './dto/inputs';
@@ -33,7 +33,7 @@ export class ItemsResolver {
   }
 
   @Mutation(() => Item)
-  removeItem(@Args('id', { type: () => Int }) id: number) {
+  removeItem(@Args('id', { type: () => ID }) id: string): Promise<Item> {
     return this.itemsService.remove(id);
   }
 }
