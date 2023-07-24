@@ -15,6 +15,7 @@ type User {
   email: String!
   roles: [String!]!
   isActive: Boolean!
+  lastUpdatedBy: User
 }
 
 type AuthResponse {
@@ -25,16 +26,30 @@ type AuthResponse {
 type Query {
   items: [Item!]!
   item(id: ID!): Item!
-  users: [User!]!
+  users(roles: [ValidRoles!] = []): [User!]!
   user(id: ID!): User!
   revalidate: AuthResponse!
+}
+
+"""
+The ValidRoles enum represents the possible roles for a user in the application. The values are admin, user, and superUser.
+
+ Admin users have full control over the application. They can create, update, and delete users, roles, and other resources.
+* User users have limited access to the application. They can create and edit their own profiles, and they can view and participate in discussions.
+* SuperUser users have the same permissions as admin users, but they also have the ability to grant and revoke roles to other users.
+"""
+enum ValidRoles {
+  admin
+  user
+  superUser
 }
 
 type Mutation {
   createItem(createItemInput: CreateItemInput!): Item!
   updateItem(updateItemInput: UpdateItemInput!): Item!
   removeItem(id: ID!): Item!
-  removeUser(id: ID!): User!
+  updateUser(updateUserInput: UpdateUserInput!): User!
+  blockUser(id: ID!): User!
   signup(signupInput: SignUpInput!): AuthResponse!
   login(loginInput: LoginInput!): AuthResponse!
 }
@@ -50,6 +65,15 @@ input UpdateItemInput {
   quantity: Float
   quantityUnits: String
   id: ID!
+}
+
+input UpdateUserInput {
+  email: String
+  fullName: String
+  password: String
+  id: ID!
+  roles: [ValidRoles!]
+  isActive: Boolean
 }
 
 input SignUpInput {
