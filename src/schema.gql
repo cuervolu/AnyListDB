@@ -54,6 +54,9 @@ type Mutation {
   createItem(createItemInput: CreateItemInput!): Item!
   updateItem(updateItemInput: UpdateItemInput!): Item!
   removeItem(id: ID!): Item!
+
+  """Execute the build of the database by seeding users and items."""
+  executeSeed: Boolean!
 }
 
 input SignUpInput {
