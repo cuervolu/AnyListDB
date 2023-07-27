@@ -13,7 +13,7 @@ import * as bcrypt from 'bcrypt';
 import { User } from './entities/user.entity';
 import { SignUpInput } from 'src/auth/dto/inputs/signup.input';
 import { ValidRoles } from 'src/auth/enums/valid-roles.enum';
-import { UpdateUserInput } from './dto/update-user.input';
+import { UpdateUserInput } from './dto/inputs/update-user.input';
 
 @Injectable()
 export class UsersService {
