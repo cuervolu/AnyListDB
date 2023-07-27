@@ -118,4 +118,21 @@ export class ItemsService {
 
     return { ...item, id };
   }
+
+  /**
+   * The `itemCountByUser` function returns the number of items associated with a given user.
+   * @param {User} user - The `user` parameter is an object of type `User`. It represents a user entity
+   * and contains properties such as `id`, `name`, `email`, etc. In this particular function, the `id`
+   * property of the `user` object is used to filter the items in the repository and
+   * @returns The `itemCountByUser` function is returning a promise that resolves to a number.
+   */
+  async itemCountByUser(user: User): Promise<number> {
+    return this.itemsRepository.count({
+      where: {
+        user: {
+          id: user.id,
+        },
+      },
+    });
+  }
 }
