@@ -29,3 +29,5 @@
     ```
     localhost:3000/graphql
     ```
+
+7. Ejecutar la __"mutation"__ ```executeSeed```, para llenar la base de datos con información
