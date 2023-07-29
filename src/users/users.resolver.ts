@@ -12,13 +12,20 @@ import {
 } from '@nestjs/graphql';
 
 import { UsersService } from './users.service';
-import { User } from './entities/user.entity';
-import { ValidRolesArgs } from './dto/args/roles.arg';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
-import { ValidRoles } from 'src/auth/enums/valid-roles.enum';
-import { UpdateUserInput } from './dto/inputs/update-user.input';
 import { ItemsService } from 'src/items/items.service';
+
+import { User } from './entities/user.entity';
+import { Item } from 'src/items/entities/item.entity';
+
+import { ValidRolesArgs } from './dto/args/roles.arg';
+import { ValidRoles } from 'src/auth/enums/valid-roles.enum';
+
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
+
+import { UpdateUserInput } from './dto/inputs';
+import { PaginationArgs, SearchArgs } from 'src/common/dto/args';
 
 /**
  * The `UsersResolver` is a NestJS resolver responsible for handling GraphQL queries and mutations related to users.
@@ -59,7 +66,7 @@ export class UsersResolver {
     @Args('id', { type: () => ID }, ParseUUIDPipe) id: string,
     @CurrentUser([ValidRoles.admin, ValidRoles.superUser]) _user: User,
   ): Promise<User> {
-    return this.usersService.findOneByEmail(id);
+    return this.usersService.findOneById(id);
   }
 
   @Mutation(() => User, { name: 'updateUser' })
@@ -93,5 +100,30 @@ export class UsersResolver {
     @Parent() user: User,
   ): Promise<number> {
     return this.itemService.itemCountByUser(user);
+  }
+  /**
+   * Resolves the 'items' field for a user, retrieving a paginated array of items belonging to the user.
+   * It supports pagination using the `PaginationArgs` object and can filter items based on the `SearchArgs` object.
+   *
+   * @param {User} adminUser - An object of type `User` representing the admin user who is requesting the items. Only admin users are allowed to access this field.
+   * @param {User} user - An object of type `User` representing the user for whom we want to find all items.
+   * The `User` object has a property `id` which is used to filter the items.
+   * @param {PaginationArgs} paginationArgs - An object of type `PaginationArgs` containing the `limit` and `offset` properties to support pagination.
+   * The `limit` specifies the maximum number of items to return, while the `offset` specifies the starting position of the data to be queried.
+   * @param {SearchArgs} searchArgs - An object of type `SearchArgs` containing the `search` property for filtering items based on a search term.
+   * The `search` parameter allows filtering items by the `name` column using a case-insensitive search.
+   * @returns {Promise<Item[]>} A promise that resolves to an array of `Item` objects matching the specified criteria.
+   * @since 1.2.0
+   * @see PaginationArgs
+   * @see SearchArgs
+   */
+  @ResolveField(() => [Item], { name: 'items' })
+  async getItemsByUser(
+    @CurrentUser([ValidRoles.admin]) adminUser: User,
+    @Parent() user: User,
+    @Args() paginationArgs: PaginationArgs,
+    @Args() searchArgs: SearchArgs,
+  ): Promise<Item[]> {
+    return this.itemService.findAll(user, paginationArgs, searchArgs);
   }
 }

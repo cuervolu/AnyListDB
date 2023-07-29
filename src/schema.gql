@@ -9,8 +9,8 @@ type User {
   roles: [String!]!
   isActive: Boolean!
   lastUpdatedBy: User
-  items: [Item!]!
   itemCount: Int!
+  items(offset: Int = 10, limit: Int = 10, search: String): [Item!]!
 }
 
 type Item {
