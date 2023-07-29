@@ -26,6 +26,8 @@ import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 
 import { UpdateUserInput } from './dto/inputs';
 import { PaginationArgs, SearchArgs } from 'src/common/dto/args';
+import { ListsService } from 'src/lists/lists.service';
+import { List } from 'src/lists/entities/list.entity';
 
 /**
  * The `UsersResolver` is a NestJS resolver responsible for handling GraphQL queries and mutations related to users.
@@ -40,6 +42,7 @@ export class UsersResolver {
   constructor(
     private readonly usersService: UsersService,
     private readonly itemService: ItemsService,
+    private readonly listService: ListsService,
   ) {}
 
   @Query(() => [User], { name: 'users' })
@@ -141,5 +144,48 @@ export class UsersResolver {
     @Args() searchArgs: SearchArgs,
   ): Promise<Item[]> {
     return this.itemService.findAll(user, paginationArgs, searchArgs);
+  }
+
+  /**
+   * The function `getListsByUser` retrieves lists belonging to a user with pagination and search
+   * functionality.
+   * @param {User} adminUser - The adminUser parameter is of type User and is annotated with the
+   * @CurrentUser decorator. This decorator is used to retrieve the currently logged-in user with the
+   * specified roles (in this case, [ValidRoles.admin]). This parameter is used to ensure that only
+   * users with the admin role can access this method.
+   * @param {User} user - The `user` parameter is the user for whom we want to retrieve the lists.
+   * @param {PaginationArgs} paginationArgs - An object containing pagination parameters such as page
+   * number and page size. These parameters are used to limit the number of results returned and to
+   * navigate through the pages of results.
+   * @param {SearchArgs} searchArgs - The `searchArgs` parameter is an object that contains the
+   * arguments for searching lists. It could include properties such as `searchTerm` to specify the
+   * keyword to search for, `sortBy` to specify the field to sort the lists by, and `sortOrder` to
+   * specify the order of the sorting
+   * @returns a Promise that resolves to an array of List objects.
+   */
+  @ResolveField(() => [List], { name: 'lists' })
+  async getListsByUser(
+    @CurrentUser([ValidRoles.admin]) adminUser: User,
+    @Parent() user: User,
+    @Args() paginationArgs: PaginationArgs,
+    @Args() searchArgs: SearchArgs,
+  ): Promise<List[]> {
+    return this.listService.findAll(user, paginationArgs, searchArgs);
+  }
+
+  /**
+   * The function `listCount` returns the count of lists associated with a user.
+   * @param {User} adminUser - The adminUser parameter is of type User and is decorated with the
+   * @CurrentUser decorator. It is expected to be an admin user.
+   * @param {User} user - The "user" parameter is of type "User" and is the parent object of the current
+   * resolver. It represents the user for whom we want to retrieve the count of lists.
+   * @returns a Promise that resolves to a number.
+   */
+  @ResolveField(() => Int, { name: 'listCount' })
+  async listCount(
+    @CurrentUser([ValidRoles.admin]) adminUser: User,
+    @Parent() user: User,
+  ): Promise<number> {
+    return this.listService.listCountByUser(user);
   }
 }
