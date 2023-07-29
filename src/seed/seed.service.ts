@@ -8,13 +8,26 @@ import { SEED_ITEMS, SEED_USERS } from './data/seed-data';
 import { UsersService } from 'src/users/users.service';
 import { ItemsService } from 'src/items/items.service';
 
+/**
+ * @description Service for seeding data in the database.
+ * @since 1.0.0
+ * @author cuervolu
+ */
 @Injectable()
 export class SeedService {
   //This property is used to store whether the application is running in a production environment or not.
   private isProd: boolean;
 
+  /**
+   * @constructor
+   * @param {ConfigService} configService - The ConfigService instance.
+   * @param {Repository<Item>} itemsRepository - The repository for Item entities.
+   * @param {Repository<User>} usersRepository - The repository for User entities.
+   * @param {UsersService} userService - The UsersService instance.
+   * @param {ItemsService} itemService - The ItemsService instance.
+   */
   constructor(
-    private readonly configService: ConfigService,
+    configService: ConfigService,
     @InjectRepository(Item)
     private readonly itemsRepository: Repository<Item>,
     @InjectRepository(User)
