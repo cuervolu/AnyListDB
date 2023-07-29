@@ -9,6 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import * as bcrypt from 'bcrypt';
+import { PaginationArgs, SearchArgs } from 'src/common/dto/args';
 
 import { User } from './entities/user.entity';
 import { SignUpInput } from 'src/auth/dto/inputs/signup.input';
@@ -92,30 +93,52 @@ export class UsersService {
     }
   }
   /**
-   * The `findAll` function retrieves users from the database based on their roles using a query
-   * builder.
-   * @param {ValidRoles[]} roles - An array of valid roles that are used to filter the users.
-   * @returns The function `findAll` returns a Promise that resolves to an array of User objects.
+   * Retrieves users from the database based on their roles using a query builder.
+   *
+   * @param {ValidRoles[]} roles - An array of valid roles used to filter the users.
+   * @param {PaginationArgs} paginationArgs - An object of type `PaginationArgs` containing the `limit` and `offset`properties to support pagination. The `limit` specifies the maximum number of users to return, while the `offset` specifies the starting position of the data to be queried.
+   * @param {SearchArgs} searchArgs - An object of type `SearchArgs` containing the `search` property for filtering users based on a search term. The `search` parameter allows filtering users by their full name using a case-insensitive search.
+   * @returns {Promise<User[]>} A promise that resolves to an array of `User` objects matching the specified criteria.
+   * @since 1.4.0
+   * @see ValidRoles
+   * @see PaginationArgs
+   * @see SearchArgs
    */
-  async findAll(roles: ValidRoles[]): Promise<User[]> {
-    if (roles.length === 0)
-      return this.usersRepository.find({
-        //? It's not necessary because lastUpdatedBy is set to lazy
-        //   relations: {
-        //     lastUpdatedBy: true,
-        //   },
-      });
+  async findAll(
+    roles: ValidRoles[],
+    paginationArgs: PaginationArgs,
+    searchArgs: SearchArgs,
+  ): Promise<User[]> {
+    const { limit, offset } = paginationArgs;
+    const { search } = searchArgs;
+
+    const queryBuilder = this.usersRepository
+      .createQueryBuilder()
+      .limit(limit)
+      .offset(offset);
 
     /* 
     The code is creating a query builder to retrieve users from the database based on
-    their roles.
-     @see Array Functions and Operators from PostgreSQL 9.6.24 Documentation {@link https://www.postgresql.org/docs/9.6/functions-array.html} 
+    their roles. The roles are checked against an array column using the overlap operator (&&).
+    For PostgreSQL, the 'ARRAY[roles] && ARRAY[:...roles]' syntax checks if any element in
+    the 'roles' array overlaps with the elements in the ':...roles' parameter array.
+    @see Array Functions and Operators from PostgreSQL Documentation:
+    {@link https://www.postgresql.org/docs/current/functions-array.html#ARRAY-OPERATORS-TABLE}
     */
-    return this.usersRepository
-      .createQueryBuilder()
-      .andWhere('ARRAY[roles] && ARRAY[:...roles]')
-      .setParameter('roles', roles)
-      .getMany();
+    if (roles.length !== 0) {
+      queryBuilder
+        .andWhere('ARRAY[roles] && ARRAY[:...roles]')
+        .setParameter('roles', roles);
+    }
+
+    if (search) {
+      console.log(search);
+      queryBuilder.andWhere('LOWER("fullName") LIKE :fullName', {
+        fullName: `%${search.toLowerCase()}%`,
+      });
+    }
+
+    return await queryBuilder.getMany();
   }
 
   /**

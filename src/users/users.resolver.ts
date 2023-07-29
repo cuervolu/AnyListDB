@@ -44,21 +44,37 @@ export class UsersResolver {
 
   @Query(() => [User], { name: 'users' })
   /**
-   * The function `findAll` takes in a list of valid roles and the current user, and returns a promise
-   * that resolves to an array of users.
-   * @param {ValidRolesArgs} validRoles - The validRoles parameter is an argument decorator that is
-   * used to specify the valid roles that can be passed to the findAll method. It is of type
-   * ValidRolesArgs.
-   * @param {User} user - The "user" parameter is of type "User" and is annotated with the
-   * "@CurrentUser([ValidRoles.admin])" decorator. This decorator indicates that the current user must
-   * have the "admin" role in order to access this method.
-   * @returns a Promise that resolves to an array of User objects.
+   * Retrieves a paginated array of users based on their valid roles and the current user's role.
+   *
+   * @param {ValidRolesArgs} validRoles - An object of type `ValidRolesArgs` representing the valid roles
+   * that can be used to filter the users. The `ValidRolesArgs` object has a property `roles` that contains
+   * an array of valid roles.
+   * @param {User} _user - An object of type `User` representing the current user. The `@CurrentUser` decorator
+   * applied to this parameter specifies that the user must have either the "admin" or "superUser" role to access
+   * this method. Note that the parameter name is prefixed with an underscore "_" to indicate that it is unused in the method implementation.
+   * @param {PaginationArgs} paginationArgs - An object of type `PaginationArgs` containing the `limit` and `offset`
+   * properties to support pagination. The `limit` specifies the maximum number of users to return, while the `offset`
+   * specifies the starting position of the data to be queried.
+   * @param {SearchArgs} searchArgs - An object of type `SearchArgs` containing the `search` property for filtering
+   * users based on a search term. The `search` parameter allows filtering users by their names using a case-insensitive search.
+   * @returns {Promise<User[]>} A promise that resolves to an array of `User` objects matching the specified criteria.
+   * @throws {ForbiddenException} If the current user does not have the required "admin" or "superUser" role.
+   * @since 1.3.0
+   * @see ValidRolesArgs
+   * @see PaginationArgs
+   * @see SearchArgs
    */
-  findAll(
+  async findAll(
     @Args() validRoles: ValidRolesArgs,
     @CurrentUser([ValidRoles.admin, ValidRoles.superUser]) _user: User,
+    @Args() paginationArgs: PaginationArgs,
+    @Args() searchArgs: SearchArgs,
   ): Promise<User[]> {
-    return this.usersService.findAll(validRoles.roles);
+    return this.usersService.findAll(
+      validRoles.roles,
+      paginationArgs,
+      searchArgs,
+    );
   }
 
   @Query(() => User, { name: 'user' })
