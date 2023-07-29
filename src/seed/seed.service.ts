@@ -1,9 +1,10 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+
 import { Item } from 'src/items/entities/item.entity';
 import { User } from 'src/users/entities/user.entity';
-import { Repository } from 'typeorm';
 import { SEED_ITEMS, SEED_USERS } from './data/seed-data';
 import { UsersService } from 'src/users/users.service';
 import { ItemsService } from 'src/items/items.service';

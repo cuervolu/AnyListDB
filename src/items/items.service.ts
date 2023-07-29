@@ -6,6 +6,7 @@ import { CreateItemInput } from './dto/inputs/create-item.input';
 import { UpdateItemInput } from './dto/inputs/update-item.input';
 import { Item } from './entities/item.entity';
 import { User } from 'src/users/entities/user.entity';
+import { PaginationArgs } from 'src/common/dto/args/pagination.args';
 
 /**
  * The `ItemsService` is a NestJS service responsible for handling CRUD operations for items.
@@ -37,16 +38,24 @@ export class ItemsService {
 
   /**
    * The `findAll` function returns a promise that resolves to an array of items belonging to a
-   * specific user.
+   * specific user. It supports pagination using the `PaginationArgs` object.
+   *
    * @param {User} user - The `user` parameter is an object of type `User`. It represents the user for
    * whom we want to find all items. The `User` object has a property `id` which is used to filter the
    * items.
-   * @returns The `findAll` function is returning a promise that resolves to an array of `Item`
+   * @param {PaginationArgs} paginationArgs - The `paginationArgs` parameter is an object of type `PaginationArgs`.
+   * It contains the `limit` and `offset` properties to support pagination. The `limit` specifies the maximum
+   * number of items to return, while the `offset` specifies the starting position of the data to be queried.
+   * @returns {Promise<Item[]>} The `findAll` function is returning a promise that resolves to an array of `Item`
    * objects.
+   * @since 1.1.0
    * @author Cuervolu
    */
-  async findAll(user: User): Promise<Item[]> {
+  async findAll(user: User, paginationArgs: PaginationArgs): Promise<Item[]> {
+    const { limit, offset } = paginationArgs;
     return this.itemsRepository.find({
+      take: limit,
+      skip: offset,
       where: {
         user: {
           id: user.id,
