@@ -1,12 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Like, Repository } from 'typeorm';
 
-import { CreateItemInput } from './dto/inputs/create-item.input';
-import { UpdateItemInput } from './dto/inputs/update-item.input';
+import { CreateItemInput, UpdateItemInput } from './dto/inputs';
+import { PaginationArgs, SearchArgs } from 'src/common/dto/args';
+
 import { Item } from './entities/item.entity';
-import { User } from 'src/users/entities/user.entity';
-import { PaginationArgs } from 'src/common/dto/args/pagination.args';
+import { User } from '../users/entities/user.entity';
 
 /**
  * The `ItemsService` is a NestJS service responsible for handling CRUD operations for items.
@@ -37,31 +37,52 @@ export class ItemsService {
   }
 
   /**
-   * The `findAll` function returns a promise that resolves to an array of items belonging to a
-   * specific user. It supports pagination using the `PaginationArgs` object.
+   * Retrieves a paginated array of items belonging to a specific user. It supports pagination using the `PaginationArgs` object
+   * and can filter items based on the `SearchArgs` object.
    *
-   * @param {User} user - The `user` parameter is an object of type `User`. It represents the user for
-   * whom we want to find all items. The `User` object has a property `id` which is used to filter the
-   * items.
-   * @param {PaginationArgs} paginationArgs - The `paginationArgs` parameter is an object of type `PaginationArgs`.
-   * It contains the `limit` and `offset` properties to support pagination. The `limit` specifies the maximum
-   * number of items to return, while the `offset` specifies the starting position of the data to be queried.
-   * @returns {Promise<Item[]>} The `findAll` function is returning a promise that resolves to an array of `Item`
-   * objects.
-   * @since 1.1.0
-   * @author Cuervolu
+   * @param {User} user - An object of type `User` representing the user for whom we want to find all items.
+   * The `User` object has a property `id` which is used to filter the items.
+   * @param {PaginationArgs} paginationArgs - An object of type `PaginationArgs` containing the `limit` and `offset` properties to support pagination.
+   * The `limit` specifies the maximum number of items to return, while the `offset` specifies the starting position of the data to be queried.
+   * @param {SearchArgs} searchArgs - An object of type `SearchArgs` containing the `search` property for filtering items based on a search term.
+   * The `search` parameter allows filtering items by the `name` column using a case-insensitive search.
+   * @returns {Promise<Item[]>} A promise that resolves to an array of `Item` objects matching the specified criteria.
+   * @since 1.2.0
+   * @see PaginationArgs
+   * @see SearchArgs
+   * @example
+   * // Example usage:
+   * const user = ...; // Get the user object
+   * const paginationArgs = new PaginationArgs();
+   * paginationArgs.limit = 10;
+   * paginationArgs.offset = 0;
+   * const searchArgs = new SearchArgs();
+   * searchArgs.search = 'keyword';
+   * const items = await this.itemsService.findAll(user, paginationArgs, searchArgs);
    */
-  async findAll(user: User, paginationArgs: PaginationArgs): Promise<Item[]> {
+  async findAll(
+    user: User,
+    paginationArgs: PaginationArgs,
+    searchArgs: SearchArgs,
+  ): Promise<Item[]> {
     const { limit, offset } = paginationArgs;
-    return this.itemsRepository.find({
-      take: limit,
-      skip: offset,
-      where: {
-        user: {
-          id: user.id,
-        },
-      },
-    });
+    const { search } = searchArgs;
+
+    // Create a query builder for the `itemsRepository` with pagination and filtering options
+    const queryBuilder = this.itemsRepository
+      .createQueryBuilder('item')
+      .where('item.userId = :userId', { userId: user.id })
+      .take(limit)
+      .skip(offset);
+
+    // Add a condition to the query builder to filter the items based on the `name` column
+    if (search) {
+      queryBuilder.andWhere('LOWER(item.name) LIKE :name', {
+        name: `%${search.toLowerCase()}%`,
+      });
+    }
+
+    return queryBuilder.getMany();
   }
 
   /**
