@@ -4,10 +4,12 @@ import {
   Entity,
   Index,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
 import { User } from 'src/users/entities/user.entity';
+import { ListItem } from 'src/list-item/entities/list-item.entity';
 
 /**
  * Represents a list entity in the application.
@@ -51,4 +53,19 @@ export class List {
   @Index('userId-list-index')
   @Field(() => User)
   user: User;
+
+  /**
+   * The list of list items associated with this list.
+   *
+   * Represents a one-to-many relationship with the ListItem entity, where a list can have multiple list items.
+   * Each list item corresponds to an item in the list.
+   *
+   * @type {ListItem[]}
+   * @memberof List
+   * @since 1.5.0
+   * @see ListItem
+   */
+  @OneToMany(() => ListItem, (listItem) => listItem.list, { lazy: true })
+  // @Field(() => [ListItem])
+  listItem: ListItem[];
 }

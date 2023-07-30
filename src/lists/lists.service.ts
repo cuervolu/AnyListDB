@@ -154,7 +154,17 @@ export class ListsService {
 
     return { ...list, id };
   }
-
+  /**
+   * Retrieves the number of lists associated with a specific user.
+   * The `user` parameter is an object of type `User` representing the user for whom we want to count the lists.
+   * The `User` object has a property `id` which is used to identify the user.
+   *
+   * @param {User} user - The user object representing the user for whom we want to count the lists.
+   * @returns {Promise<number>} A promise that resolves to the number of lists associated with the specified user.
+   * @memberof ListService
+   * @since 1.5.0
+   * @see User
+   */
   async listCountByUser(user: User): Promise<number> {
     return this.listRepository.count({
       where: {

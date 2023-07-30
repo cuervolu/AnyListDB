@@ -11,13 +11,13 @@ export class PaginationArgs {
   /**
    * @description The offset specifies the starting position of the data to be queried.
    * @type {number}
-   * @default 10
+   * @default 0
    * @since 1.0.0
    */
   @Field(() => Int, { nullable: true })
   @IsOptional()
   @Min(0)
-  offset = 10;
+  offset = 0;
 
   /**
    * @description The limit specifies the maximum number of items to be queried.

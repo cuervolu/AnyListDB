@@ -4,10 +4,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { Item } from 'src/items/entities/item.entity';
-import { User } from 'src/users/entities/user.entity';
-import { SEED_ITEMS, SEED_USERS } from './data/seed-data';
-import { UsersService } from 'src/users/users.service';
 import { ItemsService } from 'src/items/items.service';
+import { ListItem } from 'src/list-item/entities/list-item.entity';
+import { List } from 'src/lists/entities/list.entity';
+import { User } from 'src/users/entities/user.entity';
+
+import { ListItemService } from 'src/list-item/list-item.service';
+import { ListsService } from 'src/lists/lists.service';
+import { SEED_ITEMS, SEED_LIST, SEED_USERS } from './data/seed-data';
+import { UsersService } from 'src/users/users.service';
 
 /**
  * @description Service for seeding data in the database.
@@ -24,17 +29,32 @@ export class SeedService {
    * @param {ConfigService} configService - The ConfigService instance.
    * @param {Repository<Item>} itemsRepository - The repository for Item entities.
    * @param {Repository<User>} usersRepository - The repository for User entities.
+   * @param {Repository<List>} listsRepository - The repository for ListItems entities.
+   * @param {Repository<ListItem>} listItemRepository - The repository for Lists entities.
    * @param {UsersService} userService - The UsersService instance.
    * @param {ItemsService} itemService - The ItemsService instance.
+   * @param {ListItemService} listItemService - The ListItemService instance.
+   * @param {ListsService} listService - The ListService instance.
    */
   constructor(
     configService: ConfigService,
+
     @InjectRepository(Item)
     private readonly itemsRepository: Repository<Item>,
+
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
+
+    @InjectRepository(ListItem)
+    private readonly listItemRepository: Repository<ListItem>,
+
+    @InjectRepository(List)
+    private readonly listsRepository: Repository<List>,
+
     private readonly userService: UsersService,
     private readonly itemService: ItemsService,
+    private readonly listItemService: ListItemService,
+    private readonly listService: ListsService,
   ) {
     this.isProd = configService.get('STATE') === 'prod';
   }
@@ -67,6 +87,17 @@ export class SeedService {
       // Create items
       await this.loadItems(user);
 
+      // Create lists
+      const list = await this.loadLists(user);
+
+      //Create listItems
+      const items = await this.itemService.findAll(
+        user,
+        { limit: 15, offset: 0 },
+        {},
+      );
+      await this.loadListItems(list, items);
+
       return true;
     } catch (error) {
       console.error('An error occurred during seeding:', error);
@@ -80,12 +111,27 @@ export class SeedService {
    * This operation cannot be undone.
    */
   async deleteDatabase() {
+    //Delete listItems
+    await this.listItemRepository
+      .createQueryBuilder()
+      .delete()
+      .where({})
+      .execute();
+
+    //Delete  List
+    await this.listsRepository
+      .createQueryBuilder()
+      .delete()
+      .where({})
+      .execute();
+
     //Delete items
     await this.itemsRepository
       .createQueryBuilder()
       .delete()
       .where({})
       .execute();
+
     //Delete Users
     await this.usersRepository
       .createQueryBuilder()
@@ -120,5 +166,40 @@ export class SeedService {
     }
 
     await Promise.all(itemsPromises);
+  }
+
+  /**
+   * The function "loadLists" asynchronously loads lists for a user by creating them using the list
+   * service.
+   * @param {User} user - The "user" parameter is an object representing the user for whom the lists
+   * are being loaded.
+   * @returns The first element of the "lists" array is being returned.
+   */
+  async loadLists(user: User): Promise<List> {
+    const lists = [];
+
+    for (const list of SEED_LIST) {
+      lists.push(await this.listService.create(list, user));
+    }
+
+    return lists[0];
+  }
+
+  /**
+   * The function `loadListItems` asynchronously creates list items with random quantities and
+   * completion statuses for a given list and array of items.
+   * @param {List} list - The "list" parameter is an object representing a list.
+   * @param {Item[]} items - The `items` parameter is an array of `Item` objects. Each `Item` object
+   * represents an item that needs to be added to a list.
+   */
+  async loadListItems(list: List, items: Item[]) {
+    for (const item of items) {
+      this.listItemService.create({
+        quantity: Math.round(Math.random() * 10),
+        completed: Math.round(Math.random() * 1) === 0 ? false : true,
+        listId: list.id,
+        itemId: item.id,
+      });
+    }
   }
 }
